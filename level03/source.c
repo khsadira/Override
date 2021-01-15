@@ -28,8 +28,22 @@ void    test(int password, int number)
     key = number - password;
     if (key <= 21)
         decrypt(key);
-    decrypt(rand());
-    return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
+    decrypt(rand()); return ;
 }
 
 int     main()

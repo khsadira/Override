@@ -14,6 +14,7 @@ int main()
 
     child = fork();
     wstatus = 0;
+    memset(buff, '\0', 156);
     if (child == 0)
     {
         prctl(1, 1);
