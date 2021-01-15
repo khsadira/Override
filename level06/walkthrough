@@ -37,8 +37,9 @@ Breakpoint 2, 0x08048866 in auth ()
 (gdb) x/d -0x10+$ebp
 0xffffd698:	6229050
 
+Le login doit avoir une len supérieur ou égal à 6.
 
-On utilise le login: "AAAAAA" car comme on peut le voir, le login doit avoir une len supérieur ou égale à 6.
+On test avec "AAAAAA"
 
 LOGIN: AAAAAA
 SERIAL: 6229050
