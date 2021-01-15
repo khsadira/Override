@@ -10,13 +10,13 @@ Commands:
   wil has reserved some storage :>
 ----------------------------------------------------
 Input command: store
-Number: -2
-Index: 1
-Completed store command successfully
+  Number: -2
+  Index: -2
+  Completed store command successfully
 Input command: read
-Index: -2
-Number at data[4294967294] is 4294957016
-Completed read command successfully
+  Index: -2
+  Number at data[4294967294] is 4294967294
+  Completed read command successfully
 
 
 On peut donc en conclure que 
